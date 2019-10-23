@@ -1,5 +1,5 @@
 var Client = require('instagram-private-api').V1;
-var device = new Client.Device('noticieiro.noticias');
+var device = new Client.Device('mobile');
 let Globalsession = {}
 
 var Request = require('instagram-private-api').V1.Request;
