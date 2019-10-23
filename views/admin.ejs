@@ -1,0 +1,886 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<style>
+		.sidenav {
+		    height: 100%;
+		    width: 0;
+		    position: fixed;
+		    z-index: 1;
+		    top: 0;
+		    left: 0;
+		    background-color: #111;
+		    overflow-x: hidden;
+		    transition: 0.5s;
+		    padding-top: 60px;
+		}
+
+		.sidenav a {
+		    padding: 8px 8px 8px 32px;
+		    text-decoration: none;
+		    font-size: 25px;
+		    color: #818181;
+		    display: block;
+		    transition: 0.3s;
+		}
+
+		.sidenav a:hover {
+		    color: #f1f1f1;
+		}
+
+		.sidenav .closebtn {
+		    position: absolute;
+		    top: 0;
+		    right: 25px;
+		    font-size: 36px;
+		    margin-left: 50px;
+		}
+
+		@media screen and (max-height: 450px) {
+		  .sidenav {padding-top: 15px;}
+		  .sidenav a {font-size: 18px;}
+		}
+		</style>
+	</head>
+	<body>
+		<div id="mySidenav" class="sidenav">
+			  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+			  <a href="javascript:void(0)"  onclick="loadCategories()">Categorias</a>
+			  <a href="javascript:void(0)" onclick="loadHashtags()">HashTags</a>
+				<a href="javascript:void(0)" onclick="loadInstagramOptions()">Instagram</a>
+				<a href="javascript:void(0)" onclick="loadLog(true)">Log</a>
+			  <a href="#">Contact</a>
+		</div>
+		<div class="header">
+			<span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; open</span>
+		</div>
+		<div class="container">
+			
+			<div id="section"></div>
+		</div>
+	</body>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	
+	<script>
+		var token = '<%= token %>';
+		var categories = [];
+		var hashtags = []
+		var instagramAccountsGetFeed = []
+		var feed = []
+		var currentInstagramAccount;
+		var intervalLoadLog = null
+
+		function loadInstagramOptions(){
+			clearInterval(intervalLoadLog)
+			var code = ""
+			code += "<ul>"
+			code += "		<li>"
+			code += "				<button class='btn btn-primary btn-sm' onclick='loadSearchInstagramAccounts()' type='button'  >Buscar ID de cuenta instagram</button>"
+			code += "		</li>"
+
+			code += "		<li>"
+			code += "				<button class='btn btn-primary btn-sm' onclick='loadInstagramAccounts()' type='button'>Cuentas de instagram</button>"
+			code += "		</li>"
+
+			code += "		<li>"
+			code += "		</li>"
+
+			code += "		<li>"
+			code += "		</li>"
+
+			code += "</ul>"
+
+			$('#section').html(code)
+			closeNav()
+		}
+
+
+		function loadInstagramAccounts(){
+			$.ajax({
+			  type: "GET",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			  },
+			  url: "instagram/accounts_get_feed",
+			  success: function(hash) {
+			    instagramAccountsGetFeed = hash.instagramAccountsGetFeeds;
+
+			    loadInstagramAccountsGetFeedTable();
+			  }
+			});
+		}
+		function loadInstagramAccountsGetFeedTable(){
+			var code = "";
+			code += '<center><input type="button" class="btn btn-success btn-sm" value="Add Instagram Account" onclick="loadEditInstagramAccountGetFeed(Number(0))">'
+			code +='<table class="table">'
+						+ '<th>'
+							+ 'ID'
+						+ '</th>'
+						+ '<th>'
+							+ 'Name'
+						+ '</th>'
+						+ '<th>'
+							+ 'language'
+						+ '</th>'
+						+ '<th>'
+							+ 'Coger Imagenes'
+						+ '</th>'
+						+ '<th>'
+							+ 'Coger Videos'
+						+ '</th>'
+						+ '<th>'
+							+ 'Coger Titulo'
+						+ '</th>'
+						+ '<th>'
+							+ 'Settings'
+						+ '</th>';
+			for(var i=0; i< instagramAccountsGetFeed.length; i++){
+				code +=  '<tr>'
+							+ '<td>'
+							+ instagramAccountsGetFeed[i].instagram_id 
+							+ '</td>'
+					
+							+ '<td>'
+							+ instagramAccountsGetFeed[i].name 
+							+ '</td>'
+					
+							+ '<td >'
+							+ instagramAccountsGetFeed[i].language 
+							+ '</td>'
+							+ '<td >'
+							+ instagramAccountsGetFeed[i].get_images 
+							+ '</td>'
+							+ '<td >'
+							+ instagramAccountsGetFeed[i].get_videos 
+							+ '</td>'
+							+ '<td >'
+							+ instagramAccountsGetFeed[i].get_caption 
+							+ '</td>'
+					
+							+ '<td>'
+							+ '<input type="button" class="btn btn-success btn-sm" value="Ver Instagram" onclick="getInstagramAccountGetFeed(\'' + instagramAccountsGetFeed[i].instagram_id + '\',\''+ 0 + '\')">'
+							+ '<input type="button" class="btn btn-warning btn-sm" value="Editar" onclick="loadEditInstagramAccountGetFeed(\'' + instagramAccountsGetFeed[i]._id + "" + '\')">'
+							+ '<input type="button" class="btn btn-danger btn-sm" value="Eliminar" onclick="loadDeleteInstagramAccountsGetFeed(\'' + instagramAccountsGetFeed[i].name + '\',\''+instagramAccountsGetFeed[i]._id + '\')">'
+							+ '</td>'
+						+'</tr>';
+						
+			}
+						
+					code += '</table>';
+
+					$("#section").html(code);
+					closeNav();
+		}
+		function getInstagramAccountGetFeed(instagram_id, cursor){
+							$.ajax({
+								type: "GET",
+								beforeSend: function(request) {
+									request.setRequestHeader("x-access-token", token);
+									$.ajaxSetup({
+										headers: { "x-access-token": token }
+								});
+								},
+								url: "instagram/feed/" + instagram_id + '/cursor/' + cursor,
+								success: function(response) {
+									feed = response
+									for(var i=0; i< instagramAccountsGetFeed.length; i++){
+										if(instagramAccountsGetFeed[i].instagram_id == instagram_id){
+											currentInstagramAccount = instagramAccountsGetFeed[i]
+										}
+									}
+									loadFeed(instagram_id, cursor)
+								}
+							});
+		}
+		function loadFeed(instagram_id, cursor){
+				var code = "<table>"
+					 code += "<tr>"
+				for(var i=0;i<feed.length; i++){
+					var item = feed[i]
+					if(i % 4 == 0){
+						code += "</tr>"
+						code += "<tr>"
+					}
+					code += "<td>"
+						if(item.videos && item.videos.length > 0){
+									code += "<video width='150' height='150' controls>"
+									code += "		<source src=" + item.videos[0].url + " type='video/mp4'>"
+									code += "</video>"
+									code += "<p>" + (item.videos[0].width == item.videos[0].height ? 'cuadrao' : 'NO cuadrao') + "| "+ item.video_duration + "</p>"
+									code +="<p><span>" + item.caption + "</p></span>"
+									code +="<p>Likes: <span>" + item.likesCount + "</p></span>"
+									code +="<select id='category_video_" + item.index +"'>"
+									code += "		<option value=''></option>"
+									code += "		<option value='memesland' selected>Memesland</option>"
+									code +="</select>"
+									code += "<input type='text' value='' id='caption_video_" + item.index +"'/>"
+									code += "<input type='hidden' value='" + item.instagram_id + "' id='instagram_id_" + item.index +"'/>"
+									code +="<button class='btn btn-sm btn-success' "
+									code += "onclick='postInInstagram(\"" + item.index + "\", true)' "
+									code += ">Postar insta</button>"
+						}else if(item.images && item.images.length > 0){
+							code += "<img width='150' height='150'  src=" + item.images[0].url + " >"
+									code +="<p><span>" + item.caption + "</p></span>"
+									code +="<p>Likes: <span>" + item.likesCount + "</p></span>"
+									code +="<select id='category_image_" + item.index +"'>"
+									code += "		<option value=''></option>"
+									code += "		<option value='memesland' selected>Memesland</option>"
+									code +="</select>"
+									code += "<input type='text' value='' id='caption_image_" + item.index +"' />"
+									code += "<input type='hidden' value='" + item.instagram_id + "' id='instagram_id_" + item.index +"'/>"
+									code +="<button class='btn btn-sm btn-success' "
+									code += "onclick='postInInstagram(\"" + item.index + "\", false)' "
+									code += ">Postar insta</button>"
+						}
+						code += "</td>"
+				}
+				code += "<tr>"
+				code += "</table>"
+				code += '<center><button onclick="getInstagramAccountGetFeed(\'' + instagram_id + '\',\''+ feed[0].cursor  + '\')" class="btn btn-sm btn-primary"> Cargar más</button></center>'
+				
+				if(!cursor || Number(cursor) === 0){
+					console.log('cursor en cero', cursor)
+					$('#section').html(code)	
+				}else{
+					$('#section').append(code)	
+				}
+		}
+		function postInInstagram(myIndex, videoUrl){  
+			let myItem ;
+			for(var i=0; i< feed.length;i++){
+				if(feed[i].index == myIndex){
+					myItem = feed[i]
+				}
+			}
+
+			if(videoUrl){
+				
+						let myObject = {
+							caption: $('#caption_video_' + myItem.index).val() != '' ?  $('#caption_video_' + myItem.index).val() : myItem.caption,
+							translate: $('#caption_video_'+ myItem.index).val() != ''  ? false : true,
+							video:  myItem.videos[0].url,
+							image:  myItem.images[0].url,
+							category: $("#category_video_" + myItem.index + "  option:selected").val(),
+							instagram_account_id: currentInstagramAccount.instagram_id,
+							instagram_id: myItem.instagram_id,
+							video_duration: myItem.video_duration,
+							video_height: myItem.video_height,
+							video_width: myItem.video_width
+						}
+						if(!myObject.caption || myObject.caption === null){
+								myObject.caption = ''
+						}
+
+						$.ajax({
+							type: "POST",
+							beforeSend: function(request) {
+								request.setRequestHeader("x-access-token", token);
+							},
+							url: "instagram/publish/video/",
+							data : JSON.stringify(myObject),
+							contentType: "application/json; charset=utf-8", // content type sent to server
+							dataType: "json", //Expected data format from server
+							processdata: false,
+							success: function(hash) {
+								$('#account_search_result').html('\n ' + JSON.stringify(hash))
+							},
+							error: function (xhr, ajaxOptions, thrownError) {
+								$('#account_search_result').html('\n ERROR -> ' + JSON.stringify(xhr))
+						}
+					})
+			}else{
+				
+				let myObject = {
+							caption: $('#caption_image_' + myItem.index).val() != '' ?  $('#caption_image_' + myItem.index).val() : myItem.caption,
+							translate: $('#caption_image_'+ myItem.index).val() != ''  ? false : true,
+							image:  myItem.images[0].url,
+							category: $("#category_image_" + myItem.index + "  option:selected").val(),
+							instagram_account_id: currentInstagramAccount.instagram_id,
+							instagram_id: myItem.instagram_id
+						}
+						if(!myObject.caption || myObject.caption === null){
+								myObject.caption = ''
+						}
+
+						$.ajax({
+							type: "POST",
+							beforeSend: function(request) {
+								request.setRequestHeader("x-access-token", token);
+							},
+							url: "instagram/publish/image/",
+							data : JSON.stringify(myObject),
+							contentType: "application/json; charset=utf-8", // content type sent to server
+							dataType: "json", //Expected data format from server
+							processdata: false,
+							success: function(hash) {
+								$('#account_search_result').html('\n ' + JSON.stringify(hash))
+							},
+							error: function (xhr, ajaxOptions, thrownError) {
+								$('#account_search_result').html('\n ERROR -> ' + JSON.stringify(xhr))
+						}
+					})
+			}
+			loadLog(false)
+		}
+		function loadDeleteInstagramAccountsGetFeed(instagram_account_get_feed_name ,instagram_account_get_feed_id){
+			if (confirm('quieres instagram_account_get_feed_name ' + instagram_account_get_feed_name + '?')) {
+				$.ajax({
+									type : 'DELETE',
+									url : "instagram/accounts_get_feed/" + instagram_account_get_feed_id,
+									headers : {
+											"x-access-token": token
+									},
+									contentType : 'application/x-www-form-urlencoded',
+									success : function(response) {
+										loadInstagramAccounts()
+									},
+									error : function(xhr, status, error) {
+											var err = console.log("(" + xhr.responseText + ")");
+											console.log(err); 
+
+									}
+							}); 
+			} else {
+				$.ajax({
+									type : 'DELETE',
+									url : "instagram/accounts_get_feed/" + instagram_account_get_feed_id,
+									headers : {
+											"x-access-token": token
+									},
+									contentType : 'application/x-www-form-urlencoded',
+									success : function(response) {
+											loadHashtags()
+									},
+									error : function(xhr, status, error) {
+											var err = console.log("(" + xhr.responseText + ")");
+											console.log(err); 
+
+									}
+							}); 
+			}
+		}
+		function loadEditInstagramAccountGetFeed(hashtag_id){
+			var hashtag = {};
+			console.log(instagramAccountsGetFeed.length);
+			var found = false
+			try{
+				for(var i=0; instagramAccountsGetFeed.length; i++){
+					console.log(instagramAccountsGetFeed[i]);
+					if(hashtag_id == instagramAccountsGetFeed[i]._id){
+						hashtag = instagramAccountsGetFeed[i];
+						found = true
+						break;
+					}
+				}
+			}catch(err){
+				
+			}
+			
+			if(!found){
+				hashtag = {
+					_id: 0,
+					name: '',
+					language: 'es',
+					instagram_id: 0,
+					get_videos: false,
+					get_images: false,
+					get_caption: false
+				}
+			}
+			var code ='';
+
+			code += '<form id="instagramAccountsGetFeedForm" action="instagram/accounts_get_feed/" method="post">'
+					+ '<div class="form-group">'
+					+	'<label for="name">Nombre</label>'
+					+ 	'<input type="text" class="form-control" id="name" name="name" value="' + hashtag.name + '">'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="color">Account id</label>'
+					+ 	'<input type="text" class="form-control" id="instagram_id" name="instagram_id" value="' + hashtag.instagram_id + '">'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="color">Idioma de la pagina</label>'
+					+ 	'<input type="text" class="form-control" id="language" name="language" value="' + hashtag.language + '">'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="get_videos">Coger Videos</label>'
+					+ 	'<select id="get_videos" name="get_videos" >'
+					+       '<option value=false>No </option>'
+					+       '<option value=true>Si </option>'
+					+   '</select>'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="get_images">Coger Imagenes</label>'
+					+ 	'<select id="get_images" name="get_images" >'
+					+       '<option value=false>No </option>'
+					+       '<option value=true>Si </option>'
+					+   '</select>'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="get_caption">Coger El titulo del memazo</label>'
+					+ 	'<select id="get_caption" name="get_caption" >'
+					+       '<option value=false>No </option>'
+					+       '<option value=true>Si </option>'
+					+   '</select>'
+					+ '</div>'
+					+ '<input type="hidden" id="_id" name="_id" value="' + hashtag._id + '">'
+					+ '<input type="button" onclick="sendInstagramAccountsGetFeedForm()" value="Guardar" class="btn btn-primary btn-sm">'
+					+'</form>';
+
+					$('#section').html(code);
+
+		}
+		function sendInstagramAccountsGetFeedForm(){
+			
+			console.log(JSON.stringify($('#instagramAccountsGetFeedForm').serialize()));
+			$.ajax({
+									type : 'POST',
+									url : "instagram/accounts_get_feed",
+									headers : {
+											"x-access-token": token
+									},
+									contentType : 'application/x-www-form-urlencoded',
+									data : JSON.stringify($('#instagramAccountsGetFeedForm').serialize()).replace('"','').replace('"',''),
+									success : function(response) {
+											loadInstagramAccounts()
+									},
+									error : function(xhr, status, error) {
+											var err = console.log("(" + xhr.responseText + ")");
+											console.log(err); 
+
+									}
+							}); 
+
+	}
+
+
+		function loadSearchInstagramAccounts(){
+			var code = ""
+			code += "<center>"
+			code += "			<span><input type='text' id='account_name' /><button onclick='searchAccountIdByName()' class='btn btn-sm btn-danger' type='button'>buscar</button> </span>"
+			code += "</center>"
+			code += "<div id='account_search_result'></div>"
+
+			$('#section').html(code)
+
+		}
+
+		function searchAccountIdByName(){
+			$.ajax({
+			  type: "POST",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			  },
+			  url: "instagram/search/" + $("#account_name").val(),
+			  success: function(hash) {
+					$('#account_search_result').html('\n ' + JSON.stringify(hash))
+				},
+				error: function (xhr, ajaxOptions, thrownError) {
+					$('#account_search_result').html('\n ERROR -> ' + JSON.stringify(xhr))
+      }
+		})
+	}
+
+		function loadInstagramForceVideoOptions(){
+			var code = ""
+			code += '<select id="page"> <option value="">433</option>'
+			code += '<option value="253625977">433</option>'
+			code += '<option value="4220148528">Cabrodeportes</option>'
+			code += '<option value="4716023562">Tu mejor jugada</option>'
+			code += '</select>'
+			code += '<center> <button  type="button" class="btn btn-sm btn-warning" onclick="forceVideoFootball()">Forzar Video Futbol</button>'
+			code += '<br></br><textarea id="console-response"></textarea>'
+
+
+			
+			$("#section").html(code)
+			closeNav()
+
+		}
+		function forceVideoFootball(){
+			var language = 'en'
+
+			switch($("#page option:selected").val()){
+				case (253625977):
+					language = 'en'
+					break
+				case (4220148528):
+					language = 'es'
+					break
+				case (4716023562):
+					language = 'es'
+					break
+			}
+			$.ajax({
+			  type: "POST",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			  },
+			  url: "videofootball/" + $("#page option:selected").val() + '/' + language,
+			  success: function(hash) {
+					$('#console-response').append('\n ' + JSON.stringify(hash))
+				},
+				error: function (xhr, ajaxOptions, thrownError) {
+					$('#console-response').append('\n ERROR -> ' + JSON.stringify(hash))
+      }
+				
+			});
+		}
+		function loadHashtags(){
+			$.ajax({
+			  type: "GET",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			  },
+			  url: "hashtags",
+			  success: function(hash) {
+			    hashtags = hash.hashtags;
+
+			    loadHashtagsTable();
+			  }
+			});
+		}
+		function loadHashtagsTable(){
+			var code = "";
+			code += '<center><input type="button" class="btn btn-success btn-sm" value="Add Hashtag" onclick="loadEditHashtag(Number(0))">'
+			code +='<table class="table">'
+						+ '<th>'
+							+ 'ID'
+						+ '</th>'
+						+ '<th>'
+							+ 'Name'
+						+ '</th>'
+						+ '<th>'
+							+ 'color'
+						+ '</th>'
+						+ '<th>'
+							+ 'Settings'
+						+ '</th>';
+			for(var i=0; i< hashtags.length; i++){
+				code +=  '<tr>'
+							+ '<td>'
+							+ hashtags[i]._id 
+							+ '</td>'
+					
+							+ '<td>'
+							+ hashtags[i].name 
+							+ '</td>'
+					
+							+ '<td style="background-color:' + hashtags[i].color + '">'
+							+ hashtags[i].color 
+							+ '</td>'
+					
+							+ '<td>'
+							+ '<input type="button" class="btn btn-warning btn-sm" value="Editar" onclick="loadEditHashtag(\'' + hashtags[i]._id + "" + '\')">'
+							+ '<input type="button" class="btn btn-danger btn-sm" value="Eliminar" onclick="loadDeleteHashtag(\'' + hashtags[i].name + '\',\''+hashtags[i]._id + '\')">'
+							+ '</td>'
+						+'</tr>';
+						
+			}
+						
+					code += '</table>';
+
+					$("#section").html(code);
+					closeNav();
+
+
+			
+		}
+		function loadDeleteHashtag(hashtag_name ,hashtag_id){
+			if (confirm('quieres deletar ' + hashtag_name + '?')) {
+				$.ajax({
+									type : 'DELETE',
+									url : "hashtags/" + hashtag_id,
+									headers : {
+											"x-access-token": token
+									},
+									contentType : 'application/x-www-form-urlencoded',
+									success : function(response) {
+											loadHashtags()
+									},
+									error : function(xhr, status, error) {
+											var err = console.log("(" + xhr.responseText + ")");
+											console.log(err); 
+
+									}
+							}); 
+			} else {
+					// Do nothing!
+			}
+		}
+		function loadEditHashtag(hashtag_id){
+			var hashtag = {};
+			console.log(hashtags.length);
+			var found = false
+			try{
+				for(var i=0; hashtags.length; i++){
+					console.log(hashtags[i]);
+					if(hashtag_id == hashtags[i]._id){
+						hashtag = hashtags[i];
+						found = true
+						break;
+					}
+				}
+			}catch(err){
+				
+			}
+			
+			if(!found){
+				hashtag = {
+					_id: 0,
+					name: '',
+					color: '#000000'
+				}
+			}
+			var code ='';
+
+			code += '<form id="hashtagForm" action="hashtags" method="post">'
+					+ '<div class="form-group">'
+					+	'<label for="name">Nombre</label>'
+					+ 	'<input type="text" class="form-control" id="name" name="name" value="' + hashtag.name + '">'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="color">color</label>'
+					+ 	'<input type="color" class="form-control" id="color" name="color" value="' + hashtag.color + '">'
+					+ '</div>'
+					
+					+ '<input type="hidden" id="_id" name="_id" value="' + hashtag._id + '">'
+					+ '<input type="button" onclick="sendHashtagForm()" value="Guardar" class="btn btn-primary btn-sm">'
+					+'</form>';
+
+					$('#section').html(code);
+
+	
+		}
+		function sendHashtagForm(){
+			
+			console.log(JSON.stringify($('#hashtagForm').serialize()));
+			$.ajax({
+									type : 'POST',
+									url : "hashtags",
+									headers : {
+											"x-access-token": token
+									},
+									contentType : 'application/x-www-form-urlencoded',
+									data : JSON.stringify($('#hashtagForm').serialize()).replace('"','').replace('"',''),
+									success : function(response) {
+											loadHashtags()
+									},
+									error : function(xhr, status, error) {
+											var err = console.log("(" + xhr.responseText + ")");
+											console.log(err); 
+
+									}
+							}); 
+
+	}
+
+		function loadCategories(){
+			$.ajax({
+			  type: "GET",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			  },
+			  url: "categories",
+			  success: function(cat) {
+			    categories = cat.categories;
+
+			    loadCategoriesTable();
+			  }
+			});
+		}
+		function loadCategoriesTable(){
+			var code = "";
+			code +='<table class="table">'
+						+ '<th>'
+							+ 'ID'
+						+ '</th>'
+						+ '<th>'
+							+ 'Name'
+						+ '</th>'
+						+ '<th>'
+							+ 'color'
+						+ '</th>'
+						+ '<th>'
+							+ 'icon'
+						+ '</th>'
+						+ '<th>'
+							+ 'Settings'
+						+ '</th>';
+			for(var i=0; i< categories.length; i++){
+				code +=  '<tr>'
+							+ '<td>'
+							+ categories[i]._id 
+							+ '</td>'
+					
+							+ '<td>'
+							+ categories[i].name 
+							+ '</td>'
+					
+							+ '<td style="background-color:' + categories[i].color + '">'
+							+ categories[i].color 
+							+ '</td>'
+					
+							+ '<td>'
+							+ categories[i].icon 
+							+ '<i style="font-size:30px;cursor:pointer" class="' + categories[i].icon + '"></i>'
+							+ '</td>'
+					
+							+ '<td>'
+							+ '<input type="button" class="btn btn-warning btn-sm" value="Editar" onclick="loadEditCategory(\'' + categories[i]._id + "" + '\')">'
+							+ '<input type="button" class="btn btn-danger btn-sm" value="Eliminar" onclick="loadDeleteCategory(' + categories[i]._id + ')">'
+							+ '</td>'
+						+'</tr>';
+						
+			}
+						
+					code += '</table>';
+
+					$("#section").html(code);
+					closeNav();
+
+
+			
+		}
+		function loadEditCategory(category_id){
+			var category = {};
+			console.log(categories.length);
+			for(var i=0; categories.length; i++){
+				console.log(categories[i]);
+				if(category_id == categories[i]._id){
+					category = categories[i];
+					break;
+				}
+			}
+			var code ='';
+
+			code += '<form id="categoryForm" action="categories" method="post">'
+					+ '<div class="form-group">'
+					+	'<label for="name">Nombre</label>'
+					+ 	'<input type="text" class="form-control" id="name" name="name" value="' + category.name + '">'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="color">color</label>'
+					+ 	'<input type="color" class="form-control" id="color" name="color" value="' + category.color + '">'
+					+ '</div>'
+					+ '<div class="form-group">'
+					+	'<label for="icon">Icon</label>'
+					+ 	'<input type="text" class="form-control" id="icon" name="icon" value="' + category.icon + '">'
+					+ '<i style="font-size:30px;cursor:pointer" class="' + categories[i].icon + '"></i>'
+					+ '</div>'
+					+ '<input type="hidden" id="_id" name="_id" value="' + categories[i]._id + '">'
+					+ '<input type="button" onclick="sendCategoryForm()" value="Guardar" class="btn btn-primary btn-sm">'
+					+'</form>';
+
+					$('#section').html(code);
+
+	
+		}
+		function openNav() {
+		    document.getElementById("mySidenav").style.width = "200px";
+		}
+
+		function closeNav() {
+		    document.getElementById("mySidenav").style.width = "0";
+		}
+
+		function loadLog(stopInterval){
+			$.ajax({
+			  type: "GET",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			  },
+			  url: "log",
+			  success: function(hash) {
+					hashtags = hash
+					$('#section').html('<center><button class="btn btn-sm btn-primary" onclick="deleteLog()">Delete log</button> <button class="btn btn-sm btn-danger" onclick="stopIntervaLog()">Stop lopping log</button></center>'
+													+ hash.replace(/\r\n/g, '</br>'))
+			  }
+			});
+			closeNav()
+			if(stopIntervaLog){
+				intervalLoadLog = setInterval(loadLogNointerval(false), 2000)
+			}
+				
+				
+			
+		}
+		function loadLogNointerval(stopInterval){
+			$.ajax({
+			  type: "GET",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			  },
+			  url: "log",
+			  success: function(hash) {
+					hashtags = hash
+					$('#section').html('<center><button class="btn btn-sm btn-primary" onclick="deleteLog()">Delete log</button> <button class="btn btn-sm btn-danger" onclick="stopIntervaLog()">Stop lopping log</button></center>'
+													+ hash.replace(/\r\n/g, '</br>'))
+			  }
+			});
+			closeNav()
+		}
+		function stopIntervaLog(){
+			clearInterval(intervalLoadLog)
+				intervalLoadLog = null
+		}
+		function deleteLog(){
+			$.ajax({
+									type : 'DELETE',
+									url : "log/",
+									headers : {
+											"x-access-token": token
+									},
+									contentType : 'application/x-www-form-urlencoded',
+									success : function(response) {
+										loadInstagramAccounts()
+									},
+									error : function(xhr, status, error) {
+											var err = console.log("(" + xhr.responseText + ")");
+											console.log(err); 
+
+									}
+							})
+
+		}
+		
+		$.ajax({
+			  type: "GET",
+			  beforeSend: function(request) {
+			    request.setRequestHeader("x-access-token", token);
+			    $.ajaxSetup({
+				    headers: { "x-access-token": token }
+				});
+			  },
+			  url: "newsCount",
+			  success: function(msg) {
+			    console.log("The result =" + JSON.stringify(msg));
+			  }
+			});
+
+		function sendCategoryForm(){
+			
+				console.log(JSON.stringify($('#categoryForm').serialize()));
+				$.ajax({
+				            type : 'POST',
+				            url : "categories",
+				            headers : {
+				                "x-access-token": token
+				            },
+				            contentType : 'application/x-www-form-urlencoded',
+				            data : JSON.stringify($('#categoryForm').serialize()),
+				            success : function(response) {
+				                location.reload();
+				            },
+				            error : function(xhr, status, error) {
+				                var err = console.log("(" + xhr.responseText + ")");
+				                console.log(err);                   
+				            }
+				        }); 
+
+		}
+	</script>
+</html>
