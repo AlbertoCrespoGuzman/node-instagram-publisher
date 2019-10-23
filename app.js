@@ -1,5 +1,5 @@
 var Client = require('instagram-private-api').V1;
-var device = new Client.Device('noticieiro.noticias');
+var device = new Client.Device('mobile');
 var storage = new Client.CookieFileStorage(__dirname + '/cookies/your_instagram_username.json');
 
 let Globalsession = {}
